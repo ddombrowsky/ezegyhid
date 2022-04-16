@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>6SR Stellar/Fantom Gateway</title>
+</head>
+
+<body>
+<h1>6SR Stellar to Fantom Gateway</h1>
+
+<p>This tool allows users to bridge the WFTM token
+between the stellar network (<a href="https://stellar.org/">stellar.org</a>)
+and the Fantom Opera network
+(<a href ="https://www.fantom.foundation/">fantom.foundation</a>).
+</p>
+
+<b>NOTE:</b>Only Stellar to Fantom is currently supported<br/><br/>
+
+How to use it:
+<ol>
+<li>Register your FTM address using the form below.</li>
+<li>Check the current pool exchange rate to confirm that you have
+    acceptable market conditions.</li>
+<li>Send <a href="https://stellar.expert/explorer/public/asset/WFTM-GAEDZ7BHMDYEMU6IJT3CTTGDUSLZWS5CQWZHGP4XUOIDG5ISH3AFAEK2-1">
+WFTM</a> to the specified XLM address, and be SURE to include the memo.</li>
+</ol>
+
+<form action="/q">
+    <label for="ftm_addr">Fantom Public Key (including 0x)</label><br/>
+    <input style='width:30em' minlength=42 type="text" id="ftm_addr" name="ftm_addr"><br/>
+    <input type="submit" value="Check or Create">
+</form>
+</body>
+
+</html>

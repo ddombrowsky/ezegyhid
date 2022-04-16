@@ -1,0 +1,27 @@
+{
+  "name": "6SR Fantom/Stellar Gateway",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./src/index.js",
+    "stellar": "node ./src/stellar.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "ethers": "^5.6.0",
+    "express": "^4.17.3",
+    "parse-database-url": "^0.3.0",
+    "pg": "^8.7.3",
+    "stellar-sdk": "^10.0.1"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.18.0",
+    "@typescript-eslint/parser": "^5.18.0",
+    "eslint": "^8.13.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0"
+  }
+}
