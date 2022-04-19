@@ -1,9 +1,8 @@
 require('dotenv').config();
 const { ethers } = require('ethers');
 
-//const provider = new ethers.providers.JsonRpcProvider('https://rpcapi.fantom.network/');
-const provider = new ethers.providers.JsonRpcProvider('http://localhost:8545/');
-//const provider = new ethers.providers.JsonRpcProvider('https://rpc.testnet.fantom.network/');
+const provider =
+  new ethers.providers.JsonRpcProvider(process.env.FANTOM_PROVIDER);
 
 const ABI = [
   'function balanceOf(address owner) view returns (uint256)',

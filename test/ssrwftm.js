@@ -20,15 +20,24 @@ const ERC20_ABI = [
   'function allowance(address owner, address spender) view returns (uint256)',
   'function transfer(address recipient, uint256 amount)',
 ];
-const ERC20_CONTRACT = '0x5FbDB2315678afecb367f032d93F642f64180aa3'; // local
-//const ERC20_CONTRACT = '0x433645B3832D7925492213eC02F5F183bA41Cab4'; // testnet
 
-const walletPub = '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266'; // local
-//const walletPub = '0x4e80BAf6D4E635F5D3D4152f371b1CAC39DDfda2'; // testnet
+let ERC20_CONTRACT;
+let walletPub;
+let lpWalletPub;
+
+const testnet=true;
+
+if (testnet) {
+  ERC20_CONTRACT = '0x433645B3832D7925492213eC02F5F183bA41Cab4'; // testnet
+  walletPub = '0x4e80BAf6D4E635F5D3D4152f371b1CAC39DDfda2'; // testnet
+  lpWalletPub = '0xEFD08f19DCd2EE843918C842e8d830Abf8D68752'; // testnet
+} else {
+  ERC20_CONTRACT = '0x5FbDB2315678afecb367f032d93F642f64180aa3'; // local
+  walletPub = '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266'; // local
+  lpWalletPub = '0x70997970c51812dc3a010c7d01b50e0d17dc79c8'; // local
+}
+
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
-
-const lpWalletPub = '0x70997970c51812dc3a010c7d01b50e0d17dc79c8'; // local
-//const lpWalletPub = '0xEFD08f19DCd2EE843918C842e8d830Abf8D68752'; // testnet
 const LP_PRIVATE_KEY = process.env.LP_PRIVATE_KEY;
 
 const MAX_ALLOW = fantom.ethers.utils.parseEther(0xffffffff.toString());
@@ -133,9 +142,9 @@ async function main() {
 
   //await lp.pause();
 
-  for (let i=0;i<100;i++) {
+  for (let i=0;i<10;i++) {
     console.log('=== middle ' + i);
-    let txResp = await lp.deposit(fantom.ethers.utils.parseEther('1'));
+    let txResp = await lp.deposit(fantom.ethers.utils.parseEther('171915'));
     let txReceipt = await txResp.wait();
     console.log('deposit receipt: ' + txReceipt.transactionHash);
     await balances();
