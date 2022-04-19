@@ -4,15 +4,21 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
 // Copyright 2022 6th Street Radio LLC
-contract ssrwFTM is ERC20, Pausable {
+contract ssrwFTM is ERC20, Pausable, ReentrancyGuard {
     using Address for address;
 
     uint256 private totalDeposit;
 
     address private _lpwallet;
     ERC20 private _baseToken;
+
+    event Swap(
+        address indexed owner, address indexed spender,
+        uint256 value, uint256 fee, string memo
+    );
 
     constructor(address lpwallet, address baseToken)
         ERC20('6SR wFTM LP', 'ssrwFTM') {
@@ -22,7 +28,7 @@ contract ssrwFTM is ERC20, Pausable {
     }
 
     // Deposit wFTM, mint and receive ssrwFTM
-    function deposit(uint256 amount) whenNotPaused external returns (bool){
+    function deposit(uint256 amount) whenNotPaused nonReentrant external returns (bool){
         address account = msg.sender;
         uint256 exrate;
 
@@ -42,7 +48,7 @@ contract ssrwFTM is ERC20, Pausable {
     }
 
     // Burn ssrwFTM, receive wFTM with interest
-    function withdraw(uint256 amount) whenNotPaused external returns (uint256) {
+    function withdraw(uint256 amount) whenNotPaused nonReentrant external returns (uint256) {
         address account = msg.sender;
         int256 ex = excess();
         uint256 abex = ex < 1 ? uint256(0) : uint256(ex);
@@ -102,15 +108,10 @@ contract ssrwFTM is ERC20, Pausable {
     function swap(uint256 amount, string calldata memo) whenNotPaused external {
         address account = msg.sender;
         _baseToken.transferFrom(account, _lpwallet, amount);
-        uint256 fee = (amount * 3) / 10000;
+        uint256 fee = (amount * 15) / 10000; // 0.15% fee
         totalDeposit += (amount - fee);
-        emit Swap(account, address(0), amount, fee, memo);
+        emit Swap(account, _lpwallet, amount, fee, memo);
     }
-
-    event Swap(
-        address indexed owner, address indexed spender,
-        uint256 value, uint256 fee, string memo
-    );
 
     function pause() external {
         require(msg.sender == _lpwallet, 'ssrwFTM: pause permission denied');
