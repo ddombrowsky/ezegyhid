@@ -111,7 +111,8 @@ app.get('/q', (req, res) => {
       if (isHtml) {
         let logstr = 'Logfile (newest first):<br/><samp>';
         logs.forEach((msg) => {
-          logstr += `${msg.dt} ${msg.message}<br/>`;
+          const dstr = msg.dt.toISOString();
+          logstr += `${dstr}|${msg.message}<br/>`;
         });
         logstr += '</samp>';
         const bstr = `${stellarftm} WFTM, ${wftm} wFTM<br/><br/>` +
