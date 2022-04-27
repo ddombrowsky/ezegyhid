@@ -13,17 +13,24 @@ and the Fantom Opera network
 (<a href ="https://www.fantom.foundation/">fantom.foundation</a>).
 </p>
 
-<b>NOTE:</b>Only Stellar to Fantom is currently supported<br/><br/>
-
 How to use it:
 <ol>
-<li>Register your FTM address using the form below.</li>
+<li>Register your address using the form below.</li>
 <li>Check the current pool exchange rate to confirm that you have
     acceptable market conditions.</li>
-<li>Send <a href="https://stellar.expert/explorer/public/asset/WFTM-GAEDZ7BHMDYEMU6IJT3CTTGDUSLZWS5CQWZHGP4XUOIDG5ISH3AFAEK2-1">
-WFTM</a> to the specified XLM address, and be SURE to include the memo.</li>
+<li>Send the asset.  This can be done with:
+    <ul>
+    <li>Send <a href="https://stellar.expert/explorer/public/asset/WFTM-GAEDZ7BHMDYEMU6IJT3CTTGDUSLZWS5CQWZHGP4XUOIDG5ISH3AFAEK2-1">
+    WFTM</a> to the specified XLM address, and be SURE to include the memo.</li>
+    <li>Use the "Swap" contract command for <a href="https://ftmscan.com/address/0x3b4c7e7d0b8680cff79bd0de7827098c3608ddc7#writeContract">ssrwFTM</a>.
+        Make sure to include the memo in the "memo (string)" field.  Also
+        remember that the amount is multiplied times 10<sup>18</sup>, so for 1
+        WFTM swap the "amount" will be <code>1000000000000000000</code>.</li>
+    </ul>
+</li>
 </ol>
 
+To get your account memo code, input EITHER destination:
 <form action="/q">
     <label for="ftm_addr">Fantom Public Key (including 0x)</label><br/>
     <input style='width:30em' minlength=42 type="text" id="ftm_addr" name="ftm_addr"><br/>
