@@ -26,7 +26,7 @@ SET default_table_access_method = heap;
 
 CREATE TABLE public.account (
     memo character varying,
-    ftm_address character varying,
+    address character varying,
     amount real
 );
 
