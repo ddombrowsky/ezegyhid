@@ -22,16 +22,16 @@ lp.configure({
   assetA_code,
 });
 
-function lookupFtm(address) {
+function lookup(address) {
   return db.execute.query(
-    'SELECT * FROM account WHERE ftm_address = $1',
+    'SELECT * FROM account WHERE address = $1',
     [address],
   ).then((result) => result.rows[0]);
 }
 
-function setFtm(address, memo) {
+function set(address, memo) {
   return db.execute.query(
-    'INSERT INTO account(memo, ftm_address, amount) values ($1, $2, 0.05)',
+    'INSERT INTO account(memo, address, amount) values ($1, $2, 0.05)',
     [memo, address],
   );
 }
@@ -64,9 +64,12 @@ app.get('/', (req, res) => {
 
 app.get('/q', (req, res) => {
   const ftmAddr = req.query.ftm_addr;
+  const xlmAddr = req.query.xlm_addr;
   const isHtml = req.accepts('html');
-  if (typeof ftmAddr === 'undefined' ||
-      ftmAddr.length === 0) {
+  if ((typeof ftmAddr === 'undefined' ||
+       ftmAddr.length === 0) &&
+      (typeof xlmAddr === 'undefined' ||
+       xlmAddr.length === 0)) {
     res.sendStatus(404);
     res.end();
     return;
@@ -76,12 +79,23 @@ app.get('/q', (req, res) => {
   let currentMemo;
   let currentBalances;
 
-  lookupFtm(ftmAddr)
+  let addr;
+  let toFantom;
+
+  if (typeof ftmAddr === 'undefined' || ftmAddr.length === 0) {
+    addr = xlmAddr;
+    toFantom = false;
+  } else {
+    addr = ftmAddr;
+    toFantom = true;
+  }
+
+  lookup(addr)
     .then((row) => {
       if (row) {
         return row.memo;
       }
-      return setFtm(ftmAddr, newmemo);
+      return set(addr, newmemo);
     }).then((result, error) => {
       if (typeof result === 'string') {
         return result;
@@ -108,6 +122,12 @@ app.get('/q', (req, res) => {
       const stellarftm = currentBalances.balanceA;
       const wftm = currentBalances.balanceB;
       const html = fs.readFileSync(path.join(PRJ_ROOT, 'public', 'q.html'));
+      let lpAddr;
+      if (toFantom) {
+        lpAddr = 'GBIYTJUA6W25EFRVQJE3LNQ6VONUQ4E4TMCK7W5OBDFUQVJUHCZMOBTV';
+      } else {
+        lpAddr = '0x3B4C7E7D0b8680cfF79bD0De7827098c3608DDC7';
+      }
       if (isHtml) {
         let logstr = 'Logfile (newest first):<br/><samp>';
         logs.forEach((msg) => {
@@ -118,8 +138,10 @@ app.get('/q', (req, res) => {
         const bstr = `${stellarftm} WFTM, ${wftm} wFTM<br/><br/>` +
           "<span style='padding:2em'>&nbsp;</span>" +
           `1WFTM = ${wftm / stellarftm} wFTM, 1wFTM = ${stellarftm / wftm} WFTM`;
+
         const repl = html.toString()
-          .replace('FANTOMADDR', ftmAddr)
+          .replace('LPADDR', lpAddr)
+          .replace('DESTADDR', addr)
           .replace('XLMMEMO', currentMemo)
           .replace('POOLRATES', bstr)
           .replace('LOGS', logstr);
@@ -128,7 +150,8 @@ app.get('/q', (req, res) => {
       } else {
         res.set('Content-Type', 'application/json');
         res.send(JSON.stringify({
-          fantom_address: ftmAddr,
+          dest_address: addr,
+          lp_address: lpAddr,
           account_id: currentMemo,
           rates: {
             stellar_asset_balance: parseFloat(stellarftm),

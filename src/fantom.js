@@ -1,40 +1,29 @@
-/* eslint-disable camelcase */
 require('dotenv').config();
-const { horizon } = require('./stellar_helper');
+const { ethers, provider, LP_CONTRACT, LP_ABI } = require('./ether_helper');
 const db = require('./db_helper');
 const lp = require('./lp');
 
+const LP_WALLET = process.env.FTMPUBLIC;
+
+const lpContract = new ethers.Contract(
+    LP_CONTRACT,
+    LP_ABI,
+    provider,
+);
+
 const pubkeyA = process.env.XLMPUBLIC;
-const pubkeyB = process.env.FTMPUBLIC;
 const assetA_issuer = process.env.XLMISSUER;
 const assetA_code = process.env.XLMCODE;
 
 function processOperations(message, accountId, hash) {
-  if (typeof message.records === 'undefined') {
-    return;
-  }
-  if (message.records.length > 1) {
-    // TODO: support multiple operations
-    return;
-  }
-
   db.consoleLog('SYSTEM', 'Testing operation...');
   db.consoleLog('SYSTEM', JSON.stringify(message));
 
-  const operation = message.records[0];
-  if (!(operation.transaction_successful &&
-    operation.type === 'payment' &&
-    operation.asset_type === 'credit_alphanum4' &&
-    operation.asset_code === assetA_code &&
-    operation.asset_issuer === assetA_issuer &&
-    operation.to === pubkeyA)) {
-    db.consoleLog('SYSTEM', 'not interested.');
-    return;
-  }
-  const amountWFTM = operation.amount;
+  const amountWFTM = (message.value - message.fee) / 10**18;
+
   db.consoleLog(
     accountId,
-    `received ${amountWFTM} WFTM(stellar) ` +
+    `received ${amountWFTM} WFTM(fantom) ` +
     `for id ${accountId}`,
   );
 
@@ -50,21 +39,24 @@ function processOperations(message, accountId, hash) {
 
   db.consoleLog(accountId, 'We care!');
 
-  let ftmAddress;
+  let xlmAddress;
 
   db.lookup(accountId)
     .then((row) => {
       db.consoleLog(accountId, 'local account info:');
       db.consoleLog(accountId, JSON.stringify(row));
       if (!row) {
-        throw new Error(`account not found ${accountId}`);
+        throw {
+          internal: true,
+          message: `account not found ${accountId}`,
+        };
       }
-      ftmAddress = row.address;
+      xlmAddress = row.address;
       db.consoleLog(
         accountId,
-        `received ${amountWFTM} WFTM(stellar) ` +
+        `received ${amountWFTM} WFTM(fantom) ` +
         `for id ${accountId} ` +
-        `to ${ftmAddress} slippage ${row.amount}`,
+        `to ${xlmAddress} slippage ${row.amount}`,
       );
       db.consoleLog(accountId, `storing tx ${hash}`);
       return db.store(hash);
@@ -74,7 +66,7 @@ function processOperations(message, accountId, hash) {
         accountId,
         'LP: read balances, calculate rate, send result...',
       );
-      return lp.getB(amountWFTM, ftmAddress);
+      return lp.getA(amountWFTM, xlmAddress);
     })
     .then((ftmResult) => {
       const amt = ftmResult.amount;
@@ -82,18 +74,18 @@ function processOperations(message, accountId, hash) {
       if (amt) {
         db.consoleLog(
           accountId,
-          `COMPLETE: account ${accountId} ${ftmAddress} ` +
+          `COMPLETE: account ${accountId} ${xlmAddress} ` +
           `received ${amt} - ${ftmResult.fee}`,
         );
         promise = db.updateTx(hash, db.TX_SUCCESS, true);
         db.consoleLog(
           accountId,
-          `Fantom transaction: ${ftmResult.tx}`,
+          `Stellar transaction: ${ftmResult.tx}`,
         );
       } else {
         db.consoleLog(
           accountId,
-          `ERROR: account ${accountId} ${ftmAddress} failed`,
+          `ERROR: account ${accountId} ${xlmAddress} failed`,
         );
         promise = db.updateTx(hash, db.TX_FAIL, false);
       }
@@ -107,6 +99,9 @@ function processOperations(message, accountId, hash) {
     })
     .catch((e) => {
       db.consoleLog(accountId, `ERROR: ${e.message}`);
+      if (!e.internal) {
+        db.consoleLog('SYSTEM', e.stack);
+      }
     });
 }
 
@@ -123,34 +118,61 @@ function oper(message, accountId, hash) {
 }
 
 function recv(message) {
-  if (!message.successful) {
-    return;
-  }
-
   db.consoleLog('SYSTEM', `*** tx ${message.hash}`);
-
-  if (message.memo_type !== 'text') {
-    return;
-  }
+  db.consoleLog('SYSTEM', JSON.stringify(message));
 
   const accountId = message.memo;
 
-  message.operations().then((m) => oper(m, accountId, message.hash));
+  oper(message, accountId, message.hash);
 }
 
 function go() {
-  horizon
-    .transactions()
-    .forAccount(pubkeyA)
-    .stream({
-      onmessage: recv,
-    });
+  let filter = lpContract.filters.Swap();
+  console.log(`listening for event id ${JSON.stringify(filter)}`);
+  provider.on(filter, (ev) => {
+      console.log('SWAP EVENT: ' + JSON.stringify(ev));
+      if (ev.address !== LP_CONTRACT) {
+        console.log('ignored stray swap event');
+        return;
+      }
+      let data = lpContract.interface.parseLog(ev);
+      console.log(JSON.stringify(data));
+
+      if (data.args.length != 5) {
+        console.log('ignored swap event with invalid arguments');
+        return;
+      }
+
+      let sender = data.args[0];
+      let dest = data.args[1]; // should be 0s
+      let value = ethers.BigNumber.from(data.args[2]);
+      let fee = ethers.BigNumber.from(data.args[3]);
+      let memo = data.args[4];
+      let hash = ev.transactionHash;
+
+      console.log(`got swap event with sender: ${sender}`);
+
+      if (dest.toUpperCase() !== LP_WALLET.toUpperCase()) {
+        console.log(`swap event with invalid destination: ${dest}`);
+        return;
+      }
+
+      recv({
+        sender,
+        dest,
+        value,
+        fee,
+        memo,
+        hash
+      });
+
+  });
 }
 
-module.exports.START = function() {
+module.exports.START = function () {
   lp.configure({
     pubkeyA,
-    pubkeyB,
+    pubkeyB: LP_WALLET,
     assetA_issuer,
     assetA_code,
   });

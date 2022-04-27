@@ -1,40 +1,26 @@
 
 const fantom = require('./ether_helper');
 
-const LP_ABI = [
-  'function totalSupply() view returns (uint256)',
-  'function balanceOf(address owner) view returns (uint256)',
-  'function excess() view returns (int256)',
-  'function rate() view returns (uint256)',
-  'function deposit(uint amount) returns (bool)',
-  'function withdraw(uint amount) returns (uint256)',
-  'function transfer(address recipient, uint256 amount)',
-  'function swap(uint256 amount, string memo)',
-  'function pause()',
-];
-const LP_CONTRACT = process.env.LP_CONTRACT;
-
-const ERC20_ABI = [
-  'function balanceOf(address owner) view returns (uint256)',
-  'function approve(address spender, uint256 amount) returns (bool)',
-  'function allowance(address owner, address spender) view returns (uint256)',
-  'function transfer(address recipient, uint256 amount)',
-];
+const LP_ABI = fantom.LP_ABI;
+const LP_CONTRACT = fantom.LP_CONTRACT;
+const ERC20_ABI = fantom.ABI;
 
 let ERC20_CONTRACT;
 let walletPub;
 let lpWalletPub;
+let memo;
 
 const testnet=true;
 
 if (testnet) {
-  ERC20_CONTRACT = '0x433645B3832D7925492213eC02F5F183bA41Cab4'; // testnet
+  ERC20_CONTRACT = process.env.BASE_TOKEN;
   walletPub = '0x4e80BAf6D4E635F5D3D4152f371b1CAC39DDfda2'; // testnet
   lpWalletPub = '0xEFD08f19DCd2EE843918C842e8d830Abf8D68752'; // testnet
 } else {
-  ERC20_CONTRACT = '0x5FbDB2315678afecb367f032d93F642f64180aa3'; // local
-  walletPub = '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266'; // local
-  lpWalletPub = '0x70997970c51812dc3a010c7d01b50e0d17dc79c8'; // local
+  ERC20_CONTRACT = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+  walletPub = '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266';
+  lpWalletPub = '0x70997970c51812dc3a010c7d01b50e0d17dc79c8';
+  memo = '0668b9ca672c3e07';
 }
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
@@ -142,7 +128,7 @@ async function main() {
 
   //await lp.pause();
 
-  for (let i=0;i<10;i++) {
+  for (let i=0;i<1;i++) {
     console.log('=== middle ' + i);
     let txResp = await lp.deposit(fantom.ethers.utils.parseEther('171915'));
     let txReceipt = await txResp.wait();
@@ -174,7 +160,6 @@ async function main() {
     console.log('SWAP EVENT: ' + JSON.stringify(log));
     console.log('            ' + JSON.stringify(ev));
   });
-  let memo = '75ee03322a809018';
   txResp = await lp.swap(fantom.ethers.utils.parseEther('1'), memo);
   txReceipt = await txResp.wait();
   console.log('swap receipt: ' + txReceipt.transactionHash);

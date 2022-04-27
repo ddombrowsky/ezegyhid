@@ -1,6 +1,7 @@
 /* eslint-disable camelcase */
-const { horizon } = require('./stellar_helper');
+const { Stellar, horizon, networkPassphrase } = require('./stellar_helper');
 const fantom = require('./ether_helper');
+const db = require('./db_helper');
 
 const K = 1000;
 const FEE_RATE = 0.005;
@@ -14,6 +15,7 @@ let pubkeyB;
 let assetA_issuer;
 let assetA_code;
 let LP_PRIVATE_KEY;
+let XLM_PRIVATE_KEY;
 
 function configure(c) {
   ({
@@ -23,13 +25,23 @@ function configure(c) {
     assetA_code,
   } = c);
   LP_PRIVATE_KEY = process.env.LP_PRIVATE_KEY;
+  XLM_PRIVATE_KEY = process.env.XLM_PRIVATE_KEY;
+  if (!pubkeyA ||
+      !pubkeyB ||
+      !assetA_issuer ||
+      !assetA_code ||
+      !LP_PRIVATE_KEY ||
+      !XLM_PRIVATE_KEY)
+  {
+    throw new Error('invalid parameters in configure()');
+  }
 }
 module.exports.configure = configure;
 
 let currentNonce = -1;
 async function loadTxCount() {
   currentNonce = await fantom.provider.getTransactionCount(pubkeyB);
-  console.log(`nonce ${pubkeyB} = ${currentNonce}`);
+  db.consoleLog('LP', `nonce ${pubkeyB} = ${currentNonce}`);
   return currentNonce;
 }
 module.exports.loadTxCount = loadTxCount;
@@ -69,9 +81,54 @@ async function balances() {
 }
 module.exports.balances = balances;
 
-function sendA(amt) {
-  module.exports.balA -= amt; // HACK
+function processHorizonException(ex) {
+  let msg = ex.message;
+  if (ex.response &&
+      ex.response.data) {
+    db.consoleLog('LP', JSON.stringify(ex.response.data));
+    if (ex.response.data.extras) {
+      msg = JSON.stringify(ex.response.data.extras.result_codes);
+    }
+  }
+  return msg;
 }
+
+async function sendA(amt, destPubkey) {
+  let account = await horizon.loadAccount(pubkeyA);
+  let accountKey = Stellar.Keypair.fromSecret(XLM_PRIVATE_KEY);
+  let baseFee = await horizon.fetchBaseFee();
+  let asset = new Stellar.Asset(assetA_code, assetA_issuer);
+  if (baseFee > 100000) {
+    baseFee = 100000;
+  }
+  db.consoleLog('LP', `stellar baseFee ${baseFee} stroops`);
+  let tx = new Stellar.TransactionBuilder(account, {
+      fee: baseFee,
+      networkPassphrase,
+    })
+    .addOperation(Stellar.Operation.payment({
+      destination: destPubkey,
+      asset,
+      amount: amt.toFixed(7),
+    }))
+    .setTimeout(180)
+    .build();
+
+  tx.sign(accountKey);
+  let ret = {};
+  try {
+    let resp = await horizon.submitTransaction(tx);
+    if (!resp.successful) {
+      throw new Error(`Unsuccessful tx: ${processHorizonException(resp)}`);
+    }
+    ret.transactionHash = resp.hash;
+  } catch(e) {
+    throw new Error(`Error processing tx: ${processHorizonException(e)}`);
+  }
+
+  return ret;
+}
+
 async function sendB(amt, destPubkey) {
   const walletPriv = new fantom.ethers.Wallet(`0x${LP_PRIVATE_KEY}`);
   const wallet = walletPriv.connect(fantom.provider);
@@ -94,8 +151,8 @@ async function sendB(amt, destPubkey) {
       nonce,
     },
   );
-  console.log(txResp);
-  console.log('waiting...');
+  db.consoleLog('LP', JSON.stringify(txResp));
+  db.consoleLog('LP', 'waiting...');
   return txResp.wait();
 }
 
@@ -105,7 +162,7 @@ async function get(forA, forB, destAddr) {
   }
 
   const { balanceA, balanceB } = await balances();
-  console.log(`pool balances WFTM=${balanceA} wFTM=${balanceB}`);
+  db.consoleLog('LP', `pool balances WFTM=${balanceA} wFTM=${balanceB}`);
   let resultA = 0;
   let resultB = 0;
   let iter = 4;
@@ -136,24 +193,30 @@ async function get(forA, forB, destAddr) {
 
   result *= (1 - FEE_RATE);
   let ftmTx = '';
-  if (result - FEE_CONST > 0) {
-    const finalAmount = result - FEE_CONST;
-    console.log(`sending ${finalAmount} to ${destAddr}`);
+  let fee = FEE_CONST;
+  if (!aToB) {
+    // fee for B -> A is much less
+    fee = FEE_CONST / 100;
+  }
+
+  if (result - fee > 0) {
+    const finalAmount = result - fee;
+    db.consoleLog('LP', `sending ${finalAmount} to ${destAddr}`);
     if (aToB) {
-      console.log(`exchange ${forA} A -> ${result} - ${FEE_CONST} B (${ab})`);
+      db.consoleLog('LP', `exchange ${forA} A -> ${result} - ${fee} B (${ab})`);
       ftmTx = await sendB(finalAmount, destAddr);
     } else {
-      console.log(`exchange ${forA} B -> ${result} - ${FEE_CONST} A (${ba})`);
+      db.consoleLog('LP', `exchange ${forB} B -> ${result} - ${fee} A (${ba})`);
       ftmTx = await sendA(finalAmount, destAddr);
     }
-    console.log(ftmTx);
+    db.consoleLog('LP', JSON.stringify(ftmTx));
   } else {
-    console.log(`amount too small ${result} < ${FEE_CONST}`);
+    db.consoleLog('LP', `amount less than fee ${result} < ${fee}`);
     result = 0;
   }
   return {
     amount: result,
-    fee: FEE_CONST,
+    fee: fee,
     tx: ftmTx.transactionHash,
   };
 }
