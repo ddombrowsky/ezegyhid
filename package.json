@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node ./src/index.js",
-    "stellar": "node ./src/stellar.js"
+    "listeners": "node ./src/start_listeners.js"
   },
   "author": "",
   "license": "ISC",
