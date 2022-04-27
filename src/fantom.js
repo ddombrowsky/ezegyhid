@@ -16,8 +16,8 @@ const assetA_issuer = process.env.XLMISSUER;
 const assetA_code = process.env.XLMCODE;
 
 function processOperations(message, accountId, hash) {
-  db.consoleLog('SYSTEM', 'Testing operation...');
-  db.consoleLog('SYSTEM', JSON.stringify(message));
+  db.consoleLog('SYSTEM-FTM', 'Testing operation...');
+  db.consoleLog('SYSTEM-FTM', JSON.stringify(message));
 
   const amountWFTM = (message.value - message.fee) / 10**18;
 
@@ -100,7 +100,7 @@ function processOperations(message, accountId, hash) {
     .catch((e) => {
       db.consoleLog(accountId, `ERROR: ${e.message}`);
       if (!e.internal) {
-        db.consoleLog('SYSTEM', e.stack);
+        db.consoleLog('SYSTEM-FTM', e.stack);
       }
     });
 }
@@ -118,8 +118,8 @@ function oper(message, accountId, hash) {
 }
 
 function recv(message) {
-  db.consoleLog('SYSTEM', `*** tx ${message.hash}`);
-  db.consoleLog('SYSTEM', JSON.stringify(message));
+  db.consoleLog('SYSTEM-FTM', `*** tx ${message.hash}`);
+  db.consoleLog('SYSTEM-FTM', JSON.stringify(message));
 
   const accountId = message.memo;
 
@@ -128,18 +128,18 @@ function recv(message) {
 
 function go() {
   let filter = lpContract.filters.Swap();
-  console.log(`listening for event id ${JSON.stringify(filter)}`);
+  db.consoleLog('SYSTEM-FTM', `listening for event id ${JSON.stringify(filter)}`);
   provider.on(filter, (ev) => {
-      console.log('SWAP EVENT: ' + JSON.stringify(ev));
+      db.consoleLog('SWAP EVENT: ' + JSON.stringify(ev));
       if (ev.address !== LP_CONTRACT) {
-        console.log('ignored stray swap event');
+        db.consoleLog('SYSTEM-FTM', 'ignored stray swap event');
         return;
       }
       let data = lpContract.interface.parseLog(ev);
-      console.log(JSON.stringify(data));
+      db.consoleLog(JSON.stringify(data));
 
       if (data.args.length != 5) {
-        console.log('ignored swap event with invalid arguments');
+        db.consoleLog('SYSTEM-FTM', 'ignored swap event with invalid arguments');
         return;
       }
 
@@ -150,10 +150,10 @@ function go() {
       let memo = data.args[4];
       let hash = ev.transactionHash;
 
-      console.log(`got swap event with sender: ${sender}`);
+      db.consoleLog('SYSTEM-FTM', `got swap event with sender: ${sender}`);
 
       if (dest.toUpperCase() !== LP_WALLET.toUpperCase()) {
-        console.log(`swap event with invalid destination: ${dest}`);
+        db.consoleLog('SYSTEM-FTM', `swap event with invalid destination: ${dest}`);
         return;
       }
 
@@ -179,21 +179,21 @@ module.exports.START = function () {
 
   lp.loadTxCount()
     .then((nonce) => {
-      db.consoleLog('SYSTEM', `nonce = ${nonce}`);
+      db.consoleLog('SYSTEM-FTM', `nonce = ${nonce}`);
       return lp.balances();
     }).then((bals) => {
-      db.consoleLog('SYSTEM', '== POOL BALANCE ==');
+      db.consoleLog('SYSTEM-FTM', '== POOL BALANCE ==');
       db.consoleLog(
-        'SYSTEM',
+        'SYSTEM-FTM',
         `== ${bals.balanceA} WFTM(stellar),` +
         ` ${bals.balanceB} wFTM(fantom)`,
       );
       db.consoleLog(
-        'SYSTEM',
+        'SYSTEM-FTM',
         `== 1 WFTM(stellar) = ${bals.balanceB / bals.balanceA} wFTM(fantom)`,
       );
       db.consoleLog(
-        'SYSTEM',
+        'SYSTEM-FTM',
         `== 1 wFTM(fantom) = ${bals.balanceA / bals.balanceB} WFTM(stellar)`,
       );
       go();

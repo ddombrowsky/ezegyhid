@@ -18,8 +18,8 @@ function processOperations(message, accountId, hash) {
     return;
   }
 
-  db.consoleLog('SYSTEM', 'Testing operation...');
-  db.consoleLog('SYSTEM', JSON.stringify(message));
+  db.consoleLog('SYSTEM-XLM', 'Testing operation...');
+  db.consoleLog('SYSTEM-XLM', JSON.stringify(message));
 
   const operation = message.records[0];
   if (!(operation.transaction_successful &&
@@ -28,7 +28,7 @@ function processOperations(message, accountId, hash) {
     operation.asset_code === assetA_code &&
     operation.asset_issuer === assetA_issuer &&
     operation.to === pubkeyA)) {
-    db.consoleLog('SYSTEM', 'not interested.');
+    db.consoleLog('SYSTEM-XLM', 'not interested.');
     return;
   }
   const amountWFTM = operation.amount;
@@ -127,7 +127,7 @@ function recv(message) {
     return;
   }
 
-  db.consoleLog('SYSTEM', `*** tx ${message.hash}`);
+  db.consoleLog('SYSTEM-XLM', `*** tx ${message.hash}`);
 
   if (message.memo_type !== 'text') {
     return;
@@ -157,21 +157,21 @@ module.exports.START = function() {
 
   lp.loadTxCount()
     .then((nonce) => {
-      db.consoleLog('SYSTEM', `nonce = ${nonce}`);
+      db.consoleLog('SYSTEM-XLM', `nonce = ${nonce}`);
       return lp.balances();
     }).then((bals) => {
-      db.consoleLog('SYSTEM', '== POOL BALANCE ==');
+      db.consoleLog('SYSTEM-XLM', '== POOL BALANCE ==');
       db.consoleLog(
-        'SYSTEM',
+        'SYSTEM-XLM',
         `== ${bals.balanceA} WFTM(stellar),` +
         ` ${bals.balanceB} wFTM(fantom)`,
       );
       db.consoleLog(
-        'SYSTEM',
+        'SYSTEM-XLM',
         `== 1 WFTM(stellar) = ${bals.balanceB / bals.balanceA} wFTM(fantom)`,
       );
       db.consoleLog(
-        'SYSTEM',
+        'SYSTEM-XLM',
         `== 1 wFTM(fantom) = ${bals.balanceA / bals.balanceB} WFTM(stellar)`,
       );
       go();
