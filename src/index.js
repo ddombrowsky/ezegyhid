@@ -135,9 +135,9 @@ app.get('/q', (req, res) => {
           logstr += `${dstr}|${msg.message}<br/>`;
         });
         logstr += '</samp>';
-        const bstr = `${stellarftm} WFTM, ${wftm} wFTM<br/><br/>` +
+        const bstr = `${stellarftm} WFTM(stellar), ${wftm} WFTM(fantom)<br/><br/>` +
           "<span style='padding:2em'>&nbsp;</span>" +
-          `1WFTM = ${wftm / stellarftm} wFTM, 1wFTM = ${stellarftm / wftm} WFTM`;
+          `1WFTM(stellar) = ${wftm / stellarftm} WFTM(fantom), 1WFTM(fantom) = ${stellarftm / wftm} WFTM(stellar)`;
 
         const repl = html.toString()
           .replace('LPADDR', lpAddr)
