@@ -35,6 +35,9 @@ function configure(c) {
   {
     throw new Error('invalid parameters in configure()');
   }
+
+  gasPriceGwei = process.env.GASPRICE_GWEI || 400;
+  gasLimit = process.env.GASLIMIT || 200000;
 }
 module.exports.configure = configure;
 
@@ -142,12 +145,13 @@ async function sendB(amt, destPubkey) {
   let nonce = currentNonce;
   currentNonce +=1 ;
 
+  db.consoleLog('LP', `gasPriceGwei:${gasPriceGwei} gasLimit:${gasLimit}`);
   const txResp = await erc20.transfer(
     destPubkey,
     fantom.ethers.utils.parseEther(amt.toString()),
     {
-      gasLimit: 100000,
-      gasPrice: 550 * 1000000000,
+      gasLimit,
+      gasPrice: gasPriceGwei * 1000000000,
       nonce,
     },
   );
