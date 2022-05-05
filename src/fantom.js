@@ -130,7 +130,7 @@ function go() {
   let filter = lpContract.filters.Swap();
   db.consoleLog('SYSTEM-FTM', `listening for event id ${JSON.stringify(filter)}`);
   provider.on(filter, (ev) => {
-      db.consoleLog('SWAP EVENT: ' + JSON.stringify(ev));
+      db.consoleLog('SYSTEM-FTM', 'SWAP EVENT: ' + JSON.stringify(ev));
       if (ev.address !== LP_CONTRACT) {
         db.consoleLog('SYSTEM-FTM', 'ignored stray swap event');
         return;
