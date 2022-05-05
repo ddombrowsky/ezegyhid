@@ -109,7 +109,7 @@ function oper(message, accountId, hash) {
   db.checktx(hash)
     .then((row) => {
       if (row) {
-        db.consoleLog(accountId, `tx already exists: ${hash}`);
+        db.consoleLog('SYSTEM-FTM', `tx already exists: ${hash}`);
         return;
       }
       db.consoleLog(accountId, `new tx: ${hash}`);
