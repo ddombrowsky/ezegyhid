@@ -60,26 +60,34 @@ function calculate(tbalA, tbalB) {
 module.exports.calculate = calculate;
 
 async function balances() {
-  const acct = await horizon.accounts().accountId(pubkeyA).call();
-  const bal = acct.balances.find((x) => x.asset_type === 'credit_alphanum4' &&
-    x.asset_code === assetA_code &&
-    x.asset_issuer === assetA_issuer);
+  let bala = 0;
+  let balb = 0;
+  try {
+    const acct = await horizon.accounts().accountId(pubkeyA).call();
+    const bal = acct.balances.find((x) => x.asset_type === 'credit_alphanum4' &&
+      x.asset_code === assetA_code &&
+      x.asset_issuer === assetA_issuer);
 
-  if (typeof bal === 'undefined') {
-    throw new Error('account has no trustline to asset A');
+    if (typeof bal === 'undefined') {
+      throw new Error('account has no trustline to asset A');
+    }
+
+    const erc20 = new fantom.ethers.Contract(
+      fantom.CONTRACT,
+      fantom.ABI,
+      fantom.provider,
+    );
+    const wftmBalanceWei = await erc20.balanceOf(pubkeyB);
+    const wftmBalance = fantom.ethers.utils.formatEther(wftmBalanceWei);
+
+    bala = bal.balance;
+    balb = wftmBalance;
+  } catch (e) {
+    db.consoleLog('LP', 'ERROR: ' + e);
   }
-
-  const erc20 = new fantom.ethers.Contract(
-    fantom.CONTRACT,
-    fantom.ABI,
-    fantom.provider,
-  );
-  const wftmBalanceWei = await erc20.balanceOf(pubkeyB);
-  const wftmBalance = fantom.ethers.utils.formatEther(wftmBalanceWei);
-
   return {
-    balanceA: bal.balance,
-    balanceB: wftmBalance,
+    balanceA: bala,
+    balanceB: balb,
   };
 }
 module.exports.balances = balances;

@@ -137,7 +137,11 @@ app.get('/q', (req, res) => {
         logstr += '</samp>';
         const bstr = `${stellarftm} WFTM(stellar), ${wftm} WFTM(fantom)<br/><br/>` +
           "<span style='padding:2em'>&nbsp;</span>" +
-          `1WFTM(stellar) = ${wftm / stellarftm} WFTM(fantom), 1WFTM(fantom) = ${stellarftm / wftm} WFTM(stellar)`;
+          `1WFTM(stellar) = ${wftm / stellarftm} WFTM(fantom), 1WFTM(fantom) = ${stellarftm / wftm} WFTM(stellar)<br/><br/>` +
+          `FTM Gas Limit = ${process.env.GASLIMIT}<br/>` +
+          `Gwei Gas Price = ${process.env.GASPRICE_GWEI}<br/>` +
+          `Stellar Max Fee = 100000<br/>` // FIXME: hardcoded
+          ;
 
         const repl = html.toString()
           .replace('LPADDR', lpAddr)
