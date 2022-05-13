@@ -1,3 +1,4 @@
+require('dotenv').config();
 
 // this is a temp fix because heroku can only
 // have 2 fee dynos, so the stellar and fantom

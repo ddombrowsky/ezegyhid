@@ -1,4 +1,3 @@
-require('dotenv').config();
 const { ethers, provider, LP_CONTRACT, LP_ABI } = require('./ether_helper');
 const db = require('./db_helper');
 const lp = require('./lp');
