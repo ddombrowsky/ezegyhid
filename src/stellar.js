@@ -144,6 +144,9 @@ function go() {
     .forAccount(pubkeyA)
     .stream({
       onmessage: recv,
+      onerror: (e) => {
+        db.consoleLog('SYSTEM-XLM', `STREAM ERROR: ${e}`);
+      },
     });
 }
 
