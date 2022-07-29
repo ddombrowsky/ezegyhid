@@ -55,7 +55,7 @@ function processOperations(message, accountId, hash) {
         accountId,
         `received ${amountWFTM} WFTM(fantom) ` +
         `for id ${accountId} ` +
-        `to ${xlmAddress} slippage ${row.amount}`,
+        `to ${xlmAddress}`,
       );
       db.consoleLog(accountId, `storing tx ${hash}`);
       return db.store(hash);
