@@ -107,14 +107,12 @@ function processHorizonException(ex) {
 async function sendA(amt, destPubkey) {
   let account = await horizon.loadAccount(pubkeyA);
   let accountKey = Stellar.Keypair.fromSecret(XLM_PRIVATE_KEY);
-  let baseFee = await horizon.fetchBaseFee();
+  let maxFee = process.env.STELLAR_MAX_FEE;
   let asset = new Stellar.Asset(assetA_code, assetA_issuer);
-  if (baseFee > 100000) {
-    baseFee = 100000;
-  }
-  db.consoleLog('LP', `stellar baseFee ${baseFee} stroops`);
+
+  db.consoleLog('LP', `stellar maxFee ${maxFee} stroops`);
   let tx = new Stellar.TransactionBuilder(account, {
-      fee: baseFee,
+      fee: maxFee,
       networkPassphrase,
     })
     .addOperation(Stellar.Operation.payment({

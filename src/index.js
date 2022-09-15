@@ -140,7 +140,7 @@ app.get('/q', (req, res) => {
           `1WFTM(stellar) = ${wftm / stellarftm} WFTM(fantom), 1WFTM(fantom) = ${stellarftm / wftm} WFTM(stellar)<br/><br/>` +
           `FTM Gas Limit = ${process.env.GASLIMIT}<br/>` +
           `Gwei Gas Price = ${process.env.GASPRICE_GWEI}<br/>` +
-          `Stellar Max Fee = 100000<br/>` // FIXME: hardcoded
+          `Stellar Max Fee = ${process.env.STELLAR_MAX_FEE}<br/>`
           ;
 
         const repl = html.toString()
